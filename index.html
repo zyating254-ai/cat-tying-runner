@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cat Typing Runner</title>
+
+<style>
+  :root{
+    /* 背景：粉紫 */
+    --bg1:#ffb3e6;
+    --bg2:#bfa8ff;
+
+    /* 面板：粉蓝 */
+    --panel1:#bfe8ff;
+    --panel2:#f7d6ff;
+
+    --shadow: 0 22px 45px rgba(0,0,0,.18);
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: radial-gradient(circle at 20% 20%, var(--bg1), transparent 45%),
+                radial-gradient(circle at 80% 30%, var(--bg2), transparent 55%),
+                linear-gradient(135deg, #ff9ad5, #c9a6ff);
+    font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  }
+
+  /* 框架变大 */
+  .wrap{
+    width: 940px;           /* ✅ 更大 */
+    max-width: 92vw;
+    padding: 26px 28px 30px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.60));
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,.6);
+    backdrop-filter: blur(10px);
+  }
+
+  .title{
+    text-align:center;
+    margin: 0 0 18px;
+    font-size: 30px;
+    letter-spacing: .5px;
+  }
+
+  /* 五颜六色标题 */
+  .rainbow-title{
+    background: linear-gradient(90deg,
+      #ff4d6d, #ff9f1c, #ffd166, #06d6a0, #118ab2, #8338ec);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color: transparent;
+    font-weight: 800;
+  }
+
+  /* 跑道 */
+  .track{
+    position: relative;
+    height: 90px;
+    border-radius: 60px;
+    background: linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,.25));
+    overflow: hidden;
+    margin-bottom: 18px;
+    border: 1px solid rgba(0,0,0,.06);
+  }
+  .lane{
+    position:absolute;
+    left: 18px;
+    right: 18px;
+    top: 50%;
+    height: 6px;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(0,0,0,.18) 0 18px,
+      transparent 18px 40px
+    );
+    opacity:.35;
+  }
+
+  /* 进度条（粉蓝） */
+  .progress{
+    position:absolute;
+    left:0; top:0;
+    height:100%;
+    width:0%;
+    background: linear-gradient(90deg, rgba(160,220,255,.85), rgba(255,190,240,.60));
+    transition: width .08s linear;
+  }
+
+  /* 猫容器 */
+  .cat{
+    position:absolute;
+    left: 12px;
+    bottom: 10px;
+    transition: left .08s linear;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,.18));
+  }
+  .cat img{
+    height: 64px;
+    user-select:none;
+    pointer-events:none;
+    display:block;
+  }
+
+  /* 面板（粉蓝色） */
+  .panel{
+    padding: 18px 18px 16px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(180,235,255,.92), rgba(255,210,245,.72));
+    border: 1px solid rgba(255,255,255,.7);
+    box-shadow: 0 14px 28px rgba(0,0,0,.10);
+  }
+
+  /* 对照文字：五颜六色（逐字上色） */
+  .target{
+    font-size: 18px;
+    line-height: 1.8;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.70);
+    border: 1px solid rgba(0,0,0,.06);
+    margin-bottom: 12px;
+    min-height: 64px;
+  }
+
+  .correct{
+    font-weight: 700;
+  }
+  .wrong{
+    text-decoration: underline wavy;
+    font-weight: 800;
+    color: #ff2d55;
+  }
+
+  textarea{
+    width:100%;
+    height: 130px;
+    resize:none;
+    padding: 12px 14px;
+    font-size: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,.14);
+    outline:none;
+    background: rgba(255,255,255,.82);
+  }
+
+  .row{
+    display:flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .box{
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.70);
+    border: 1px solid rgba(0,0,0,.06);
+    font-size: 15px;
+  }
+
+  .label-rainbow{
+    font-weight: 800;
+    background: linear-gradient(90deg,#ff4d6d,#ff9f1c,#ffd166,#06d6a0,#118ab2,#8338ec);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color: transparent;
+  }
+
+  .buttons{
+    display:flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  button{
+    padding: 10px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(255,255,255,.78);
+    cursor:pointer;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  button:hover{ background: rgba(255,255,255,.92); }
+
+  /* 猫“走路”小动画（会跟随输入节奏轻微跳动） */
+  .walk{
+    animation: bob .22s infinite alternate ease-in-out;
+  }
+  @keyframes bob{
+    from{ transform: translateY(0px); }
+    to{ transform: translateY(-3px); }
+  }
+
+  /* 猫图片丢失提示（如果 cat.png 不存在会显示） */
+  .cat-missing{
+    position:absolute;
+    left: 16px;
+    bottom: 18px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.88);
+    border: 1px solid rgba(0,0,0,.10);
+    font-size: 12px;
+    color:#333;
+  }
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h2 class="title"><span class="rainbow-title">🐾 Cat Typing Runner</span></h2>
+
+    <div class="track" id="track">
+      <div class="progress" id="progress"></div>
+      <div class="lane"></div>
+
+      <!-- ✅ 小猫必须在这里显示（不是写进文字里） -->
+      <div class="cat" id="cat">
+        <img id="catImg" src="./cat.png" alt="cat">
+      </div>
+
+      <div class="cat-missing" id="catMissing" style="display:none;">
+        ⚠ cat.png が見つかりません（index.html と同じフォルダに cat.png を置いてね）
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="target" id="target"></div>
+
+      <textarea id="input" placeholder="ここから入力してください（上の英文を見ながら）"></textarea>
+
+      <div class="row">
+        <div class="box"><span class="label-rainbow">時間</span>：<b id="time">0.0</b> 秒</div>
+        <div class="box"><span class="label-rainbow">速度</span>：<b id="cpm">0</b> CPM</div>
+        <div class="box"><span class="label-rainbow">正確率</span>：<b id="acc">0.0</b>%</div>
+      </div>
+
+      <div class="buttons">
+        <button id="restart">リスタート</button>
+        <button id="next">次の英文</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ===== 英文打字模板（你要求：模板英文）=====
+  const paragraphs = [
+  "Typing practice is important for beginners.Start slowly and focus on accuracy first.",
+
+  "The quick brown fox jumps over the lazy dog.This sentence contains every letter of the alphabet.",
+
+  "I am learning programming step by step.Writing code requires patience and attention to detail.",
+
+  "Practice makes progress.Small improvements every day lead to big results.",
+
+  "Good typing rhythm is more important than speed.Stay relaxed and keep your hands comfortable.",
+
+  "Learning new skills can be challenging but rewarding.Do not be afraid of making mistakes.",
+
+  "Consistency is the key to success.Even short practice sessions are valuable.",
+
+  "Focus on what you are typing right now.Clear thinking helps reduce typing errors."
+];
+
+  const colors = ["#ff4d6d","#ff9f1c","#ffd166","#06d6a0","#118ab2","#8338ec"];
+
+  const targetEl = document.getElementById("target");
+  const inputEl = document.getElementById("input");
+  const timeEl = document.getElementById("time");
+  const cpmEl = document.getElementById("cpm");
+  const accEl = document.getElementById("acc");
+
+  const trackEl = document.getElementById("track");
+  const catEl = document.getElementById("cat");
+  const catImg = document.getElementById("catImg");
+  const progressEl = document.getElementById("progress");
+
+  const catMissing = document.getElementById("catMissing");
+
+  let targetText = "";
+  let startTime = null;
+
+  // 检测图片是否加载成功：失败就显示提示
+  catImg.addEventListener("error", () => {
+    catMissing.style.display = "block";
+  });
+
+  function pickSentence(){
+  return paragraphs[Math.floor(Math.random() * paragraphs.length)];
+}
+
+  function reset(){
+    targetText = pickSentence();
+    inputEl.value = "";
+    startTime = null;
+    timeEl.textContent = "0.0";
+    cpmEl.textContent = "0";
+    accEl.textContent = "0.0";
+    progressEl.style.width = "0%";
+    catEl.style.left = "12px";
+    render("");
+  }
+
+  // 五颜六色：每个字符按 index 取颜色
+  function rainbowSpan(ch, i, cls){
+    const color = colors[i % colors.length];
+    return `<span class="${cls}" style="color:${color}">${escapeHTML(ch)}</span>`;
+  }
+
+  function escapeHTML(str){
+    return str.replaceAll("&","&amp;")
+              .replaceAll("<","&lt;")
+              .replaceAll(">","&gt;")
+              .replaceAll('"',"&quot;")
+              .replaceAll("'","&#039;");
+  }
+
+  function render(typed){
+    let html = "";
+    let correct = 0;
+
+    for(let i=0;i<targetText.length;i++){
+      const ch = targetText[i];
+
+      if(typed[i] == null){
+        // 未输入：也用彩色显示（淡一点）
+        const color = colors[i % colors.length];
+        html += `<span style="color:${color}; opacity:.55">${escapeHTML(ch)}</span>`;
+      }else if(typed[i] === ch){
+        html += rainbowSpan(ch, i, "correct");
+        correct++;
+      }else{
+        html += `<span class="wrong">${escapeHTML(ch)}</span>`;
+      }
+    }
+
+    targetEl.innerHTML = html;
+
+    const progress = correct / targetText.length;
+    progressEl.style.width = (progress * 100) + "%";
+
+    // 计算猫的最大移动距离
+    const maxX = trackEl.clientWidth - catEl.clientWidth - 18;
+    catEl.style.left = (12 + maxX * progress) + "px";
+  }
+
+  function computeStats(typed){
+    const correct = [...typed].filter((c,i)=>c===targetText[i]).length;
+    const sec = startTime ? (performance.now() - startTime)/1000 : 0;
+    const cpm = sec > 0 ? Math.round(correct/sec*60) : 0;
+    const acc = typed.length ? (correct/typed.length*100) : 0;
+    return {correct, sec, cpm, acc};
+  }
+
+  inputEl.addEventListener("input", ()=>{
+    const typed = inputEl.value;
+
+    if(startTime === null && typed.length > 0){
+      startTime = performance.now();
+    }
+
+    render(typed);
+
+    // 猫走路动画：只要在输入就抖动一下
+    if(typed.length > 0) catEl.classList.add("walk");
+    if(typed.length === 0) catEl.classList.remove("walk");
+
+    const {sec, cpm, acc, correct} = computeStats(typed);
+    timeEl.textContent = sec.toFixed(1);
+    cpmEl.textContent = cpm.toString();
+    accEl.textContent = acc.toFixed(1);
+
+    // 完成后停住
+    if(typed.length === targetText.length && correct === targetText.length){
+      catEl.classList.remove("walk");
+      inputEl.blur();
+    }
+  });
+
+  document.getElementById("restart").addEventListener("click", reset);
+  document.getElementById("next").addEventListener("click", reset);
+
+  reset();
+</script>
+</body>
+</html>
